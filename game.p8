@@ -445,6 +445,15 @@ end
 
 end
 
+function draw_start_tut()
+local t = scn_start.tut_text()
+if t==nil then return end
+y=80
+for v in all(t) do
+	print(v,hc(v),y,15)
+	y+=10
+end
+end
 -->8
 scn_title={
 name="",
@@ -488,13 +497,42 @@ menu={
 		if s==2 then scene3() end
 		if s==3 then scene4() end
 		if s==4 then scene5() end
-		
+	end,
+	sc=function()
+		scn_start.tut=menu.s
 	end
 }
+end,
+tuts={
+	{
+		"IN THE garage YOU",
+		"UPGRADE YOUR KARREN",
+		"or BUY NEW ONES!"
+	},
+	{
+		"go into your office",
+		"to ANALYZE, RESEARCH or",
+		"ADJUST PRICES"
+	},
+	{
+		"assign youR KARREN",
+		"TO A platz IN THE CITY",
+		"or remove to stop IT",
+	},
+	{
+		"BUY beer",
+		"buy STORAGE",
+		"WHAT ELSE?"
+	},
+},
+tut_text=function()
+if scn_start.tut == nil then return {} end
+return scn_start.tuts[scn_start.tut]
 end,
 d=function()
 	draw_base()
 	draw_top_bar()
+	draw_start_tut()
 	draw_mouse()
 end,
 u=function()
@@ -966,6 +1004,7 @@ function select_menu(m,d)
 		if m.s==0 then
 					m.s=count(m.i)
 		end
+		if m.sc!=nil then m.sc() end
 end
 
 function confirm_menu(m)
@@ -990,7 +1029,9 @@ function update_menu(m)
 	
 	hitem = menu_item_by_point(m.i,mouse_x,mouse_y)
 	if hitem != nil then
+		local ms=m.s
 		m.s=hitem
+		if ms!=hitem and m.sc!=nil then m.sc() end
 		if mouse_down() then
 			confirm_menu(m)
 		end
