@@ -387,11 +387,10 @@ function draw_city_karren(idx,sel)
 local tc,x,m,t,k,n,p
 	color(8)
 	tc=8
-	if sel then tc=6 end
 	x=80	y=25+idx*8
 	m=scn_city.menu_karren
-	i = m.i[idx]
- k = data.karren[i.fidx]
+	i=m.i[idx]
+ k=data.karren[i.fidx]
  n=k.name
 
 	if k.poi!=nil then
@@ -399,6 +398,7 @@ local tc,x,m,t,k,n,p
 		line(x-2,y+2,p.x,p.y,2)
 		tc=11
 	end
+	if sel then tc=6 end
 	print(n,x,y,tc)
 	
 	return {
@@ -421,6 +421,14 @@ function	draw_garage_karren_name()
 local k
 k=data.karren[scn_garage.sk]
 print(k.name,84,112,2)
+end
+
+function draw_garage_karren_cap()
+local k=data.karren[scn_garage.sk]
+local cap=data.karren_cap(k)
+local cost=data.karren_cost(k)
+print("cap : "..cap,10,22,12)
+print("cost: "..cost,10,32,12)
 end
 
 
@@ -591,6 +599,7 @@ d=function()
 	draw_top_bar()
 	draw_grage_karren(scn_garage.sk)
 	draw_garage_karren_name()
+	draw_garage_karren_cap()
 	draw_mouse()
 end,
 u=function()
@@ -1009,6 +1018,7 @@ end
 
 function confirm_menu(m)
 	if m.c then return end
+	if m.s==0 then return end
 	if m.i[m.s].s!=nil then
 		sfx(m.i[m.s].s)
 	end
@@ -1072,17 +1082,23 @@ data={
 	money=900,
 	timespeed=10,
 	popularity=0,
+	caps={
+		10,15,20,25,30
+	},
+	costs={
+	  5,10,15,20,25
+	},
 	storage={
 		num=1,
 		beer=4,
 		bps=15, -- beer per storage
 	},
 	karren={
-	{name="karren 1",b=10,p=1,poi=nil,u={s=1,mb=10}},
-	{name="karren 2",b=0,p=1,poi=1,u={s=1,mb=8}},
-	{name="karren 3",b=10,p=1,poi=2,u={s=1,mb=10}},
-	{name="karren 4",b=10,p=1,poi=2,u={s=1,mb=10}},
-	{name="karren 5",b=10,p=1,poi=2,u={s=1,mb=10}},
+	{name="karren 1",b=10,p=1,poi=nil,u={s=1}},
+	{name="karren 2",b=0,p=1,poi=1,u={s=1}},
+	{name="karren 3",b=10,p=1,poi=2,u={s=1}},
+	{name="karren 4",b=10,p=1,poi=2,u={s=1}},
+	{name="karren 5",b=10,p=1,poi=2,u={s=1}},
 	},
 	research={
 		{v=0},{v=0},{v=0},
@@ -1102,6 +1118,12 @@ data={
 			data.hour=0
 			data.day+=1
 		end
+	end,
+	karren_cap=function(k)
+		return data.caps[k.u.s]
+	end,
+	karren_cost=function(k)
+		return data.costs[k.u.s]
 	end,
 	minutes=function()
 		return data.hour*60+data.minute
