@@ -1083,7 +1083,7 @@ data={
 	hour=11,
 	day=1,
 	money=900,
-	timespeed=500,
+	timespeed=10,
 	popularity=0,
 	caps={
 		10,15,20,25,30
@@ -1104,9 +1104,7 @@ data={
 	{name="karren 5",b=10,p=1,poi=2,u={s=1}},
 	},
 	weather=1,
-	weather_states={
-		1,2,3,4
-	},
+	weather_states=4,
 	weather_sprites={
 		64,96,104,72
 	},
@@ -1127,7 +1125,11 @@ data={
 		if data.hour>23 then
 			data.hour=0
 			data.day+=1
+			data.new_weather()
 		end
+	end,
+	new_weather=function()
+		data.weather=flr(rnd(data.weather_states)) + 1 
 	end,
 	weather_sprite=function()
 		local v,qv,spd,s
@@ -1136,7 +1138,6 @@ data={
 		v=data.hour/spd
 		qv=s * flr(v / s + 0.5)
 		return	data.weather_sprites[data.weather]+qv
-
 	end,
 	karren_cap=function(k)
 		return data.caps[k.u.s]
