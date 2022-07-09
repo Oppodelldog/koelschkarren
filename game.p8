@@ -33,6 +33,10 @@ function scene7()
 	scene=scn_analysis
 	scene.i()
 end
+function scene8()
+	scene=scn_nightly
+	scene.i()
+end
 
 function _init()
  init_main_menu()
@@ -77,19 +81,20 @@ function vc(s)
 end
 
 function draw_top_bar()
-local x,y,h,m,mw
+local x,y,h,m,mw,mc
 x=6 y=7
 h=tostr(data.hour)
 m=tostr(flr(data.minute))
 if data.hour < 10 then h="0"..h end
 if data.minute < 10 then m="0"..m end
 color(9)
-print("day:"..data.day.." "..h..":"..m,x,y)
+print("day "..data.day.." "..h..":"..m,x,y)
 
 m=tostr(flr(data.money)).."$"
 mw=#m*fw
-color(11)
-print(m,120-mw,y)
+mc=11
+if data.money<=0 then	mc=8 end
+print(m,120-mw,y,mc)
 
 spr(data.weather_sprite(),70,0,2,2)
 end
@@ -503,16 +508,54 @@ return {
 end
 
 function draw_tutorial()
-t={
-{c=8,t="tutorial:"},
-{c=10,t="YOU START WITH 1 KARREN"},
-{c=10,t="LOAD IT IN STORAGE"},
-{c=10,t="SEND IT TO THE CITY"}
-}
-
-for k,v in pairs(t) do	
-	print(v.t,hc(v.t),80+k*(fh+1),v.c)
+	t={
+	{c=8,t="tutorial:"},
+	{c=10,t="YOU START WITH 1 WAGON"},
+	{c=10,t="LOAD KOELSCH FROM STORAGE"},
+	{c=10,t="SEND IT TO THE CITY"}
+	}
+	
+	for k,v in pairs(t) do	
+		print(v.t,hc(v.t),80+k*(fh+1),v.c)
+	end
 end
+
+function draw_cash_check()
+	local xoff=20
+	local d=data.day-1
+	local title="cash check day "..d
+	print(title,hc(title),20,7)
+	line(xoff,30,106,30,7)
+	line(xoff,80,106,80,7)
+	line(xoff,92,106,92,7)	
+	header="wagon    income   cost"
+	print(header,xoff,34,9)
+	line(xoff,41,106,41,9)
+	local yoff=44
+	local total=0
+	for k,v in pairs(data.karren) do
+		local income,cost=0,0
+ 	local cck=data.cashchecks[data.day-1].karren[k]
+ 	if cck!=nil then
+			income=cck.i
+			cost=cck.c 
+			total+=income
+			total-=cost	
+ 	end
+		y=yoff+(k-1)*7
+		local ti=tostr(flr(income))
+		local tc=tostr(flr(cost))
+		print(v.name,xoff,y,7)
+		print(ti,xoff+60-#ti*fw,y,11)
+		print(tc,xoff+87-#tc*fw,y,8)
+	end
+	local tc=11
+	if total < 0 then tc=8 end
+	local ts=tostr(flr(total))
+	tx=xoff+88
+	tx-=#ts*fw
+	print("total:",xoff,84,12)
+	print(ts,tx,84,tc)
 end
 -->8
 scn_title={
@@ -549,16 +592,16 @@ i=function()
 menu={
 	y=20,	v=1,	s=1,	c=false,
 	i={
-		{t="garage"},
+		{t="storage"},
 		{t="office"},
 		{t="city"},
-		{t="storage"},
+		{t="garage"},
 	},
 	cf=function (s)
-		if s==1 then scene2() end
+		if s==1 then scene5() end
 		if s==2 then scene3() end
 		if s==3 then scene4() end
-		if s==4 then scene5() end
+		if s==4 then scene2() end
 	end,
 	sc=function()
 		scn_start.tut=menu.s
@@ -577,7 +620,7 @@ tuts={
 		"ADJUST PRICES"
 	},
 	{
-		"assign youR KARREN",
+		"assign youR WAGON",
 		"TO A platz IN THE CITY",
 		"or remove to stop IT",
 	},
@@ -611,7 +654,7 @@ menu={
 	y=80,	v=1,	s=1,	c=false,
 	i={
 		{t="upgrade"},
-		{t="buy karren "..data.karren_price().."$"},
+		{t="buy wagon "..data.karren_price().."$"},
 		{t="back"},
 		{t="",df=function(idx,sel) return draw_garage_nav(76, true ,idx,sel) end},
 		{t="",df=function(idx,sel) return draw_garage_nav(115,false,idx,sel) end},
@@ -857,7 +900,7 @@ scn_storage.packing=false
 menu={
 	y=74,	v=1,	s=1,	c=false,
 	i={
-		{s=nil,t="pack karren"},
+		{s=nil,t="load wagon"},
 		{s=nil,t="buy 10 beer "..data.beer_price().."$"},
 		{s=nil,t="buy storage "..data.storage_price().."$"},
 		{t="back"},
@@ -982,6 +1025,7 @@ d=function()
 	for k,s in pairs(sim.sims) do
 	if data.is_researched(k) then
 		yoff=yo+so*k
+		print(data.pois[k].name,xmin,yoff-14,10)		
 		line(xmin,yoff,xmax,yoff,1)
 		for x=0,xmax-xo do
 			m=flr(x*xf)
@@ -992,6 +1036,35 @@ d=function()
 		end
 	end
 	draw_menu(menu)
+	draw_mouse()
+end,
+u=function()
+	update_menu(menu)
+	update_mouse()
+end
+}
+
+scn_nightly={
+name="cash check",
+i=function()
+data.ispaused=true
+menu={
+	y=92,	v=1,	s=1,	c=false,
+	i={
+		{t="continue"},
+	},
+	cf=function (s)
+		if s==1 then 
+		scene1()
+		data.ispaused=false
+	 end
+	end
+}
+end,
+d=function()
+	draw_base()
+	draw_top_bar()
+	draw_cash_check()
 	draw_mouse()
 end,
 u=function()
@@ -1171,7 +1244,7 @@ data={
 	day=1,
 	money=100,
 	ispaused=true,
-	timespeed=10,
+	timespeed=20,
 	popularity=0,
 	pois={
 	{name="EIGELSTEIN"},
@@ -1194,12 +1267,15 @@ data={
 	{s=0},{s=0},{s=0},
 	{s=0},	{s=0},
 	},
+	cashchecks={
+		--{karren={{i=12,c=22},{i=0,c=3},{i=4,c=5},{i=6,c=7},{i=8,c=9},}}
+		},
 	karren={
-	{name="karren 1",b=0,p=1,poi=nil,u={s=1}},
-	--{name="karren 2",b=0,p=1,poi=1,u={s=1}},
-	--{name="karren 3",b=300,p=1,poi=2,u={s=5}},
-	--{name="karren 4",b=10,p=1,poi=2,u={s=1}},
-	--{name="karren 5",b=10,p=1,poi=2,u={s=1}},
+	{name="wagon 1",b=0,p=1,poi=nil,u={s=1}},
+	--{name="wagon 2",b=0,p=1,poi=1,u={s=1}},
+	--	{name="wagon 3",b=300,p=1,poi=2,u={s=5}},
+	--	{name="wagon 4",b=10,p=1,poi=2,u={s=1}},
+	--	{name="wagon 5",b=10,p=1,poi=2,u={s=1}},
 	},
 	weather=1,
 	weather_states=4,
@@ -1230,6 +1306,7 @@ data={
 			data.day+=1
 			data.new_weather()
 			data.new_beer_price()
+			scene8()			
 		end
 	end,
 	calc_sellings = function()
@@ -1241,7 +1318,20 @@ data={
 				local s=v.b-nb
 				v.b=nb
 				local	p=v.p*s
+				local kc=data.karren_cost(v)
+								
 				data.money+=p
+				data.money-=kc
+				
+				if count(data.cashchecks)<data.day then
+					add(data.cashchecks,{karren={}})
+				end
+				local cc=data.cashchecks[data.day]
+				if cc.karren[k]==nil then
+					cc.karren[k]={i=0,c=0}
+				end
+				cc.karren[k].i+=p
+				cc.karren[k].c+=kc				
 			end
 		end
 	end,
@@ -1283,7 +1373,7 @@ data={
 		return data.hour*60+data.minute
 	end,
 	new_karren=function(kc)
-		return {name="karren "..kc+1,b=0,p=1,poi=nil,u={s=1,mb=2}}
+		return {name="wagon "..kc+1,b=0,p=1,poi=nil,u={s=1,mb=2}}
 	end,
 	inc_price=function(idx)
 		k=data.karren[menu.i[idx].fidx]
@@ -1403,6 +1493,7 @@ end
 -->8
 sim={
 	lm=1439,	-- max minute (1440 minutes per day)
+	f=10,	-- general factor
 	sims={
 	function(m)
 		local i,f,v,xf,p,w
@@ -1417,7 +1508,7 @@ sim={
 		end
 
 		i=m/sim.lm+0.25
-		f=p+w+xf
+		f=p+w+xf+sim.f
 		v=abs(sin(i))
 		return v*f
 	end,
@@ -1431,7 +1522,7 @@ sim={
 		end
 		
 		i=m/sim.lm+0
-		f=p+w+xf
+		f=p+w+xf+sim.f
 		v=abs(sin(i))		
 		return v*f
 	end,
@@ -1440,7 +1531,7 @@ sim={
 		w=data.weather
 		p=data.popularity
 		i=m/sim.lm+0.1
-		f=(p+w)
+		f=p+w+sim.f
 		v=abs(sin(i))		
 		return v*f
 	end
