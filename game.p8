@@ -97,6 +97,7 @@ if data.money<=0 then	mc=8 end
 print(m,120-mw,y,mc)
 
 spr(data.weather_sprite(),70,0,2,2)
+
 end
 
 function draw_logo()
@@ -357,6 +358,7 @@ function draw_base()
 	draw_daytime_top()
 	draw_main_frame()
 	draw_menu(menu)
+	draw_menu(gmenu)
 	draw_location()
 end
 
@@ -481,7 +483,7 @@ function draw_pack_menu()
 	local dsb=data.storage.beer*10
 	local title="store:"..dsb
 	print(title,30,40,1)
-	print("1 10",70,48)
+	print("X1 X10",70,48)
 	local x,y=31,56
 	for k,v in pairs(data.karren) do
 		print(v.name,x,y,0)
@@ -495,6 +497,7 @@ local x,y,c,t,w,fdx
 fidx=menu.i[idx].fidx
 x,y = 70,56+(fidx-1)*8
 if (idx-1)%2==0 then x+=10 end
+c=4
 c=4
 if sel then c=7 end
 t="+"
@@ -528,7 +531,7 @@ function draw_cash_check()
 	line(xoff,30,106,30,7)
 	line(xoff,80,106,80,7)
 	line(xoff,92,106,92,7)	
-	header="wagon    income   cost"
+	header="wagon     sales   cost"
 	print(header,xoff,34,9)
 	line(xoff,41,106,41,9)
 	local yoff=44
@@ -539,19 +542,22 @@ function draw_cash_check()
  	if cck!=nil then
 			income=cck.i
 			cost=cck.c 
+			sold=cck.s
 			total+=income
 			total-=cost	
  	end
 		y=yoff+(k-1)*7
-		local ti=tostr(flr(income))
-		local tc=tostr(flr(cost))
+		local ti=tostr(flr(income)).."$"
+		local tc=tostr(flr(cost)).."$"
+		local ts=tostr(flr(sold))
 		print(v.name,xoff,y,7)
+		print(ts,xoff+48-#ti*fw,y,11)		
 		print(ti,xoff+60-#ti*fw,y,11)
 		print(tc,xoff+87-#tc*fw,y,8)
 	end
 	local tc=11
 	if total < 0 then tc=8 end
-	local ts=tostr(flr(total))
+	local ts=tostr(flr(total)).."$"
 	tx=xoff+88
 	tx-=#ts*fw
 	print("total:",xoff,84,12)
@@ -561,6 +567,7 @@ end
 scn_title={
 name="",
 i=function()
+gmenu.v=0
 menu={
 	y=60,	v=1,	s=1,	c=false,
 	i={
@@ -569,6 +576,7 @@ menu={
 	cf=function (s)
 		if s==1 then 
 		scene1()
+		gmenu.v=1
 		data.ispaused=false
 	 end
 	end
@@ -582,6 +590,7 @@ d=function()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()	
 	update_mouse()
 end
 }
@@ -642,6 +651,7 @@ d=function()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()		
 	update_mouse()
 end
 }
@@ -701,6 +711,7 @@ d=function()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()	
 	update_mouse()
 end
 }
@@ -730,10 +741,12 @@ d=function()
 	draw_top_bar()
 	draw_office()
 	draw_menu(menu)	
+	draw_menu(gmenu)		
 	draw_mouse()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()	
 	update_mouse()
 end
 }
@@ -854,6 +867,7 @@ d=function()
 	draw_city()
 	draw_menu(s.menu_city)
 	draw_menu(s.menu_karren)
+	draw_menu(gmenu)	
 	if s.use_city_menu then
 		i=s.menu_karren.i[s.menu_karren.si]
 		b=i.bounds
@@ -868,6 +882,7 @@ u=function()
 	else	
 		update_menu(s.menu_karren)
 	end
+	update_gmenu()	
 	update_mouse()
 end
 }
@@ -889,10 +904,12 @@ d=function()
 		draw_pack_menu()
 	end
 	draw_menu(menu)	
+	draw_menu(gmenu)	
 	draw_mouse()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()	
 	update_mouse()
 end,
 show_main_menu=function()
@@ -967,6 +984,7 @@ d=function()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()	
 	update_mouse()
 end
 }
@@ -1036,10 +1054,12 @@ d=function()
 		end
 	end
 	draw_menu(menu)
+	draw_menu(gmenu)		
 	draw_mouse()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()		
 	update_mouse()
 end
 }
@@ -1047,6 +1067,7 @@ end
 scn_nightly={
 name="cash check",
 i=function()
+gmenu.v=0
 data.ispaused=true
 menu={
 	y=92,	v=1,	s=1,	c=false,
@@ -1055,8 +1076,10 @@ menu={
 	},
 	cf=function (s)
 		if s==1 then 
-		scene1()
-		data.ispaused=false
+			scene1()
+			data.ispaused=false
+			gmenu.v=1
+			gmenu.s=0
 	 end
 	end
 }
@@ -1069,6 +1092,7 @@ d=function()
 end,
 u=function()
 	update_menu(menu)
+	update_gmenu()		
 	update_mouse()
 end
 }
@@ -1200,7 +1224,24 @@ function update_menu(m)
 		confirm_menu(m)
 	end
 	
-	hitem = menu_item_by_point(m.i,mouse_x,mouse_y)
+	handle_menu_mouse(m)
+end
+
+function update_gmenu()
+	if btnp(❎) then
+		gmenu.fastforward()
+	end
+	handle_gmenu_mouse()
+end
+
+function handle_gmenu_mouse()
+	if not	handle_menu_mouse(gmenu)	then
+		gmenu.s=0
+	end
+end
+
+function handle_menu_mouse(m)
+	local hitem = menu_item_by_point(m.i,mouse_x,mouse_y)
 	if hitem != nil then
 		local ms=m.s
 		m.s=hitem
@@ -1208,7 +1249,10 @@ function update_menu(m)
 		if mouse_down() then
 			confirm_menu(m)
 		end
+		return true
 	end
+	
+	return false
 end
 
 function mi_hidden(i)
@@ -1244,6 +1288,7 @@ data={
 	day=1,
 	money=100,
 	ispaused=true,
+	ishyperspeed=false,
 	timespeed=20,
 	popularity=0,
 	pois={
@@ -1255,7 +1300,7 @@ data={
 		100,150,200,250,300
 	},
 	costs={
-	  5,10,15,20,25
+	  2,5,8,12,15
 	},
 	storage={
 		num=1,
@@ -1271,11 +1316,11 @@ data={
 		--{karren={{i=12,c=22},{i=0,c=3},{i=4,c=5},{i=6,c=7},{i=8,c=9},}}
 		},
 	karren={
-	{name="wagon 1",b=0,p=1,poi=nil,u={s=1}},
-	--{name="wagon 2",b=0,p=1,poi=1,u={s=1}},
-	--	{name="wagon 3",b=300,p=1,poi=2,u={s=5}},
-	--	{name="wagon 4",b=10,p=1,poi=2,u={s=1}},
-	--	{name="wagon 5",b=10,p=1,poi=2,u={s=1}},
+--	{name="wagon 1",b=100,p=1,poi=nil,u={s=1}},
+	{name="wagon 2",b=100,p=1,poi=1,u={s=1}},
+	{name="wagon 3",b=100,p=5,poi=1,u={s=1}},
+	{name="wagon 4",b=100,p=10,poi=1,u={s=1}},
+	{name="wagon 5",b=100,p=7,poi=1,u={s=1}},
 	},
 	weather=1,
 	weather_states=4,
@@ -1283,7 +1328,7 @@ data={
 		64,96,104,72
 	},
 	research={
-		{v=0},{v=0},{v=0},
+		{v=1},{v=1},{v=1},
 	},
 	kp=299,   -- karren price
 	init=function()
@@ -1294,8 +1339,11 @@ data={
 		data.last = time()
 		
 		if data.ispaused then return end
-		 
-		data.minute+=data.elapsed*data.timespeed
+		local s=data.timespeed
+		if data.ishyperspeed	then
+			s=1000
+		end
+		data.minute+=data.elapsed*s
 		if flr(data.minute)>59 then
 			data.minute=0
 			data.hour+=1
@@ -1306,19 +1354,23 @@ data={
 			data.day+=1
 			data.new_weather()
 			data.new_beer_price()
+			data.ishyperspeed=false
 			scene8()			
 		end
 	end,
 	calc_sellings = function()
+	local sb,nb,s,p,kc,cc,dm
 		for k,v in pairs(data.karren) do
 			if v.poi != nil then
-				local sb=sim.sims[v.poi](sim.him(data.hour))
+				dm=data.demand(v.p)
+				sb=sim.sims[v.poi](sim.him(data.hour))
 				sb*=0.2
-				local nb=mid(0,v.b-sb,v.b+sb)
-				local s=v.b-nb
-				v.b=nb
-				local	p=v.p*s
-				local kc=data.karren_cost(v)
+				sb*=dm/100
+				nb=mid(0,v.b-sb,v.b+sb)
+				s=v.b-nb
+				v.b=nb   
+				p=v.p*s
+				kc=data.karren_cost(v)
 								
 				data.money+=p
 				data.money-=kc
@@ -1326,14 +1378,18 @@ data={
 				if count(data.cashchecks)<data.day then
 					add(data.cashchecks,{karren={}})
 				end
-				local cc=data.cashchecks[data.day]
+				cc=data.cashchecks[data.day]
 				if cc.karren[k]==nil then
-					cc.karren[k]={i=0,c=0}
+					cc.karren[k]={i=0,c=0,s=0}
 				end
-				cc.karren[k].i+=p
-				cc.karren[k].c+=kc				
+					cc.karren[k].i+=p
+					cc.karren[k].c+=kc				
+					cc.karren[k].s+=s
 			end
 		end
+	end,
+	demand=function(p)
+		return	100+-p*10
 	end,
 	new_beer_price=function()
 		data.storage.p=flr(rnd(5)) + 1 
@@ -1543,6 +1599,36 @@ sim={
 
 
 
+-->8
+gmenu={
+	y=0,	v=1,	s=0,	c=false,
+	i={
+		hyperspeed={
+			t="fast forward",
+			df=function(idx,sel)
+				local s=34
+				if sel then
+					s=35
+				end
+				spr(s,55,6)
+				return {x1=55,y1=6,x2=55+8,y2=6+8}
+			end,
+		},
+	},
+	cf=function (s)
+		if s=="hyperspeed" then 
+			gmenu.fastforward()
+	 end
+	 gmenu.s=0
+	 gmenu.c=false
+	end,
+	fastforward=function()
+		if gmenu.v!=1 then return end
+		data.ishyperspeed=true
+	 gmenu.v=0	 		
+	end
+}
+
 __gfx__
 77000000000000008000800000000000000000000000000000000000000000000000000000000000000000000000000000000000005554440000011110000000
 aa000000007700008000800000000000000000000000000000000000000000000000000000000000000000000000000000000000054444440111122221111000
@@ -1561,11 +1647,11 @@ aa0000000000aaaa8008770070080000880000080000800800080000788088788000000877788088
 000aa000000000008778000000088880077777707777000000000000000700000777700000000000000000000000000000000000000000000012226622210000
 00000000000000008707800000077770000000000000000000000000000000000000000000000000000000000000000000000000000000000122226622221000
 00070000000c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001222226622222100
-000670000001c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001555d66d5551000
-0000670000001c00000000000000000000000000000000000000000000000000000000000000000000000000000000000dddddddddddddd00011116611110000
-00000670000001c0000000000000000000000000000000000000000000000000000000000000000000000000000000000dd5555555555dd00000016610000000
-00000670000001c0000000000000000000000000000000000000000000000000000000000000000000000000000000000d555995599555d000011d66d1100000
-0000670000001c00000000000000000000000000000000000000000000000000000000000000000000000000000000000d5555aaaa5555d00015665566510000
+000670000001c00056006500870078000000000000000000000000000000000000000000000000000000000000000000000000000000000001555d66d5551000
+0000670000001c00056006500870078000000000000000000000000000000000000000000000000000000000000000000dddddddddddddd00011116611110000
+00000670000001c0005600650087007800000000000000000000000000000000000000000000000000000000000000000dd5555555555dd00000016610000000
+00000670000001c0056006500870078000000000000000000000000000000000000000000000000000000000000000000d555995599555d000011d66d1100000
+0000670000001c00560065008700780000000000000000000000000000000000000000000000000000000000000000000d5555aaaa5555d00015665566510000
 000670000001c000000000000000000000000000000000000000000000000000000000000000000000000000000000000dd5555555555dd00001111111100000
 00070000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000dddddddddddddd00000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
