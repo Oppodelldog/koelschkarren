@@ -37,6 +37,14 @@ function scene8()
 	scene=scn_nightly
 	scene.i()
 end
+function scene9()
+	scene=scn_game_won
+	scene.i()
+end
+function scene10()
+	scene=scn_game_lost
+	scene.i()
+end
 
 function _init()
  init_main_menu()
@@ -483,7 +491,7 @@ function draw_pack_menu()
 	local dsb=data.storage.beer*10
 	local title="store:"..dsb
 	print(title,30,40,1)
-	print("X1 X10",70,48)
+	print("+10 +100",60,48)
 	local x,y=31,56
 	for k,v in pairs(data.karren) do
 		print(v.name,x,y,0)
@@ -518,8 +526,12 @@ function draw_tutorial()
 	{c=10,t="SEND IT TO THE CITY"}
 	}
 	
+	draw_centered_text(t,80)
+end
+
+function draw_centered_text(t,y)
 	for k,v in pairs(t) do	
-		print(v.t,hc(v.t),80+k*(fh+1),v.c)
+		print(v.t,hc(v.t),y+k*(fh+1),v.c)
 	end
 end
 
@@ -551,7 +563,7 @@ function draw_cash_check()
 		local tc=tostr(flr(cost)).."$"
 		local ts=tostr(flr(sold))
 		print(v.name,xoff,y,7)
-		print(ts,xoff+48-#ti*fw,y,11)		
+		--		print(ts,xoff+48-#ti*fw,y,11)		
 		print(ti,xoff+60-#ti*fw,y,11)
 		print(tc,xoff+87-#tc*fw,y,8)
 	end
@@ -562,6 +574,31 @@ function draw_cash_check()
 	tx-=#ts*fw
 	print("total:",xoff,84,12)
 	print(ts,tx,84,tc)
+end
+
+
+function draw_game_won()
+	t={
+	{c=9,t="!!! you won !!!"},
+	{c=7,t="YOU REALLY MADE IT"},
+	{c=7,t="FROM NOW ON CALL YOURSELF"},
+	{c=7,t="koelsch tycoon"},
+	{c=8,t="THANKS FOR PLAYING"}
+	}
+	
+	draw_centered_text(t,20)
+end
+
+function draw_game_lost()
+	t={
+	{c=9,t="!!! you lost !!!"},
+	{c=7,t="YOU NEED MORE PRACTISE"},
+	{c=7,t="TO CALL YOURSELF"},
+	{c=7,t="koelsch tycoon"},
+	{c=8,t="THANKS FOR PLAYING"}
+	}
+	
+	draw_centered_text(t,20)
 end
 -->8
 scn_title={
@@ -915,18 +952,20 @@ end,
 show_main_menu=function()
 scn_storage.packing=false
 menu={
-	y=74,	v=1,	s=1,	c=false,
+	y=64,	v=1,	s=1,	c=false,
 	i={
 		{s=nil,t="load wagon"},
 		{s=nil,t="buy 10 beer "..data.beer_price().."$"},
+		{s=nil,t="buy 100 beer "..data.beer_price().."$"},		
 		{s=nil,t="buy storage "..data.storage_price().."$"},
 		{t="back"},
 	},
 	cf=function (s)
 		if s==1 then scn_storage.show_pack_menu() end
 		if s==2 then data.buy_beer(1) end
-		if s==3 then data.buy_storage() end
-		if s==4 then scene1() end				
+		if s==3 then data.buy_beer(10) end
+		if s==4 then data.buy_storage() end
+		if s==5 then scene1() end				
 		menu.c=false
 	end
 }
@@ -1076,10 +1115,16 @@ menu={
 	},
 	cf=function (s)
 		if s==1 then 
-			scene1()
-			data.ispaused=false
-			gmenu.v=1
-			gmenu.s=0
+		if data.gamewon() then
+			scene9()	
+		elseif data.gamelost() then
+			scene10()
+		else
+				scene1()
+				data.ispaused=false
+				gmenu.v=1
+				gmenu.s=0
+			end
 	 end
 	end
 }
@@ -1097,6 +1142,61 @@ u=function()
 end
 }
 
+
+
+
+scn_game_won={
+name="game won",
+i=function()
+gmenu.v=0
+data.ispaused=true
+menu={
+	y=92,	v=1,	s=1,	c=false,
+	i={
+		{t="quit"},
+	},
+	cf=function (s)
+		stop()
+	end
+}
+end,
+d=function()
+	draw_base()
+	draw_game_won()
+	draw_mouse()
+end,
+u=function()
+	update_menu(menu)
+	update_mouse()
+end
+}
+
+
+scn_game_lost={
+name="game over",
+i=function()
+gmenu.v=0
+data.ispaused=true
+menu={
+	y=92,	v=1,	s=1,	c=false,
+	i={
+		{t="quit"},
+	},
+	cf=function (s)
+		stop()
+	end
+}
+end,
+d=function()
+	draw_base()
+	draw_game_lost()
+	draw_mouse()
+end,
+u=function()
+	update_menu(menu)
+	update_mouse()
+end
+}
 -->8
 mouse = {
 		color=10,
@@ -1300,7 +1400,7 @@ data={
 		100,150,200,250,300
 	},
 	costs={
-	  2,5,8,12,15
+	  2,3,4,5,6
 	},
 	storage={
 		num=1,
@@ -1316,11 +1416,11 @@ data={
 		--{karren={{i=12,c=22},{i=0,c=3},{i=4,c=5},{i=6,c=7},{i=8,c=9},}}
 		},
 	karren={
---	{name="wagon 1",b=100,p=1,poi=nil,u={s=1}},
-	{name="wagon 2",b=100,p=1,poi=1,u={s=1}},
-	{name="wagon 3",b=100,p=5,poi=1,u={s=1}},
-	{name="wagon 4",b=100,p=10,poi=1,u={s=1}},
-	{name="wagon 5",b=100,p=7,poi=1,u={s=1}},
+	{name="wagon 1",b=100,p=2,poi=1,u={s=1}},
+--	{name="wagon 2",b=150,p=5,poi=1,u={s=2}},
+--	{name="wagon 3",b=200,p=5,poi=1,u={s=3}},
+--	{name="wagon 4",b=250,p=5,poi=1,u={s=4}},
+--	{name="wagon 5",b=300,p=5,poi=1,u={s=5}},	
 	},
 	weather=1,
 	weather_states=4,
@@ -1358,13 +1458,19 @@ data={
 			scene8()			
 		end
 	end,
+	gamewon=function()
+		return data.money>=10000
+	end,
+	gamelost=function()
+		return data.money<=-111
+	end,	
 	calc_sellings = function()
 	local sb,nb,s,p,kc,cc,dm
 		for k,v in pairs(data.karren) do
 			if v.poi != nil then
 				dm=data.demand(v.p)
 				sb=sim.sims[v.poi](sim.him(data.hour))
-				sb*=0.2
+				sb*=(v.u.s/10+0.1)
 				sb*=dm/100
 				nb=mid(0,v.b-sb,v.b+sb)
 				s=v.b-nb
@@ -1392,7 +1498,7 @@ data={
 		return	100+-p*10
 	end,
 	new_beer_price=function()
-		data.storage.p=flr(rnd(5)) + 1 
+		data.storage.p=flr(rnd(8)) + 1 
 	end,
 	new_weather=function()
 		data.weather=flr(rnd(data.weather_states)) + 1 
@@ -1506,10 +1612,10 @@ data={
 		return data.storage.p
 	end,
 	research_price=function()
-		return 300
+		return 900
 	end,	
 	storage_price=function()
-		return 100
+		return 200
 	end,
 	can_pay=function(amount)
 		local can
