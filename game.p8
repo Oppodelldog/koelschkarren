@@ -606,7 +606,7 @@ name="",
 i=function()
 gmenu.v=0
 menu={
-	y=60,	v=1,	s=1,	c=false,
+	y=60,	v=1,	s=0,	c=false,
 	i={
 		{t="start"},
 	},
@@ -618,6 +618,7 @@ menu={
 	 end
 	end
 }
+	snd_title_music()
 end,
 d=function()
 	draw_base()
@@ -1159,6 +1160,7 @@ menu={
 		stop()
 	end
 }
+	snd_title_music()
 end,
 d=function()
 	draw_base()
@@ -1170,7 +1172,6 @@ u=function()
 	update_mouse()
 end
 }
-
 
 scn_game_lost={
 name="game over",
@@ -1186,6 +1187,7 @@ menu={
 		stop()
 	end
 }
+	snd_tusch()
 end,
 d=function()
 	draw_base()
@@ -1495,7 +1497,7 @@ data={
 		end
 	end,
 	demand=function(p)
-		return	100+-p*10
+		return	mid(0,100,100-p*10)
 	end,
 	new_beer_price=function()
 		data.storage.p=flr(rnd(8)) + 1 
@@ -1651,6 +1653,12 @@ function snd_unassign_karren()
 end
 function snd_change_price()
 	sfx(6)
+end
+function snd_title_music()
+	sfx(20)
+end
+function snd_tusch()
+	sfx(21)
 end
 -->8
 sim={
